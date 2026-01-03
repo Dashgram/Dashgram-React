@@ -1,473 +1,189 @@
 # Dashgram React SDK
 
-React wrapper for Dashgram Analytics SDK for Telegram Mini Apps.
+React SDK for **Telegram Mini Apps**. Track user interactions and send events to Dashgram analytics.
 
-## Installation
-
-```bash
-npm install @dashgram/react @dashgram/javascript
-```
+> [!NOTE]
+> This SDK is for **Telegram Mini Apps** built with React. For vanilla JavaScript or other frameworks, see our [other SDKs](https://docs.dashgram.io/sdk).
 
 ## Quick Start
 
-### 1. Wrap your app in Provider
+### 1. Installation
+
+```bash
+npm install @dashgram/react
+# or
+pnpm add @dashgram/react
+# or
+yarn add @dashgram/react
+```
+
+### 2. Basic Setup
+
+Wrap your app with `DashgramProvider`:
 
 ```tsx
 import { DashgramProvider } from "@dashgram/react"
 
-function App() {
+export function App() {
   return (
-    <DashgramProvider projectId="your-project-id" trackLevel={2} debug={true}>
-      <YourApp />
+    <DashgramProvider projectId="your-project-id" trackLevel={2}>
+      ...
     </DashgramProvider>
   )
 }
 ```
 
-### 2. Use hooks for tracking
+**Configuration:**
 
-```tsx
-import { useDashgram } from "@dashgram/react"
+- `projectId` — Your project identifier from the [Dashgram dashboard](https://app.dashgram.io). Get it after creating a project.
+- `trackLevel` — Controls which events are automatically captured. See [Track Levels](#track-levels) section below for details.
 
-function HomePage() {
-  const { track } = useDashgram()
+### 3. Track custom events (optional)
 
-  const handleButtonClick = () => {
-    track("button_clicked", {
-      button_name: "subscribe",
-      screen: "home"
-    })
-  }
-
-  return (
-    <div>
-      <button onClick={handleButtonClick}>Subscribe</button>
-    </div>
-  )
-}
-```
-
-## API
-
-### `<DashgramProvider>`
-
-Provider component for SDK initialization.
-
-```tsx
-interface DashgramProviderProps {
-  projectId: string
-  trackLevel?: 1 | 2 | 3
-  apiUrl?: string
-  batchSize?: number
-  flushInterval?: number
-  debug?: boolean
-  disabled?: boolean
-  onError?: (error: DashgramError) => void
-  children: React.ReactNode
-}
-```
-
-**Example:**
-
-```tsx
-<DashgramProvider projectId="prj_123" trackLevel={2} debug={process.env.NODE_ENV === "development"}>
-  <App />
-</DashgramProvider>
-```
-
-### `useDashgram()`
-
-Main hook for accessing the SDK.
-
-```tsx
-const { track, isInitialized, flush, setTrackLevel, getTrackLevel } = useDashgram()
-
-// Track event
-track("purchase_completed", {
-  product_id: "123",
-  amount: 99.99
-})
-
-// Check initialization
-if (isInitialized) {
-  console.log("Dashgram ready")
-}
-
-// Flush pending events
-await flush()
-
-// Change track level
-setTrackLevel(3)
-
-// Get current track level
-const level = getTrackLevel()
-```
-
-> [!NOTE]
-> User identification is handled automatically via Telegram's `initData`. You don't need to call any identify method.
-
-### `useTrackEvent()`
-
-Hook to track events imperatively. Returns a function you can call anywhere.
+If you want to send custom events to Dashgram, use the useTrackEvent hook.
+Simply call it with an event name and optional properties whenever the action happens.
 
 ```tsx
 import { useTrackEvent } from "@dashgram/react"
 
-function ProductCard({ product }) {
-  const trackEvent = useTrackEvent()
+export function Button() {
+  const track = useTrackEvent()
 
-  const handlePurchase = async () => {
-    // Your purchase logic
-    await purchaseProduct(product.id)
-
-    // Track the event
-    trackEvent("purchase_completed", {
-      product_id: product.id,
-      product_name: product.name,
-      price: product.price
-    })
+  const handleClick = () => {
+    track("button_click", { label: "Buy" })
   }
 
-  return <button onClick={handlePurchase}>Buy</button>
+  return <button onClick={handleClick}>Click me</button>
 }
+```
+
+## API Reference
+
+### `<DashgramProvider>`
+
+Provider component that initializes the SDK.
+
+```tsx
+<DashgramProvider projectId="your-project-id" trackLevel={2} debug={false} disabled={false}>
+  <YourApp />
+</DashgramProvider>
+```
+
+**Props:**
+
+- `projectId` — **Required.** Your project ID from [Dashgram dashboard](https://app.dashgram.io)
+- `trackLevel` — Event collection level: `1`, `2`, or `3` (default: `2`)
+- `debug` — Enable debug logging (default: `false`)
+- `disabled` — Disable all tracking (default: `false`)
+
+### `useTrackEvent()`
+
+Hook that returns a function to track custom events with optional properties.
+
+```tsx
+const track = useTrackEvent()
+
+track("purchase_completed", {
+  product_id: "premium-plan",
+  price: 100,
+  currency: "TON"
+})
+```
+
+**Parameters:**
+
+- `event` — Event name (string)
+- `properties` — Optional event properties (object)
+
+### `useDashgram()`
+
+Hook to access the SDK instance.
+
+```tsx
+const { track, isInitialized, flush } = useDashgram()
+
+track("event_name")
+await flush()
 ```
 
 ### `usePageView(pageName, properties?)`
 
-Hook to track page views (for SPA routing).
+Track page views for SPA routing.
 
 ```tsx
-import { usePageView } from "@dashgram/react"
-
-function HomePage() {
-  usePageView("home_page", {
-    section: "landing"
-  })
-
-  return <div>Home</div>
-}
-```
-
-Or with React Router:
-
-```tsx
-import { useLocation } from "react-router-dom"
-import { usePageView } from "@dashgram/react"
-
-function App() {
-  const location = useLocation()
-
-  usePageView(location.pathname, {
-    search: location.search
-  })
-
-  return <Routes>...</Routes>
-}
-```
-
-### `useAutoTrack(componentName, properties?)`
-
-Automatically track component lifecycle events (mount/unmount).
-
-```tsx
-import { useAutoTrack } from "@dashgram/react"
-
-function VideoPlayer() {
-  useAutoTrack("video_player", {
-    video_id: "123"
-  })
-
-  // This will automatically track:
-  // - "video_player_mounted" on mount
-  // - "video_player_unmounted" on unmount
-
-  return <video src="..." />
-}
-```
-
-### `useScreenTracking()`
-
-Automatic navigation tracking (for React Router).
-
-```tsx
-import { useScreenTracking } from "@dashgram/react"
-import { BrowserRouter } from "react-router-dom"
-
-function App() {
-  useScreenTracking() // Automatically tracks screen_view
-
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/profile" element={<Profile />} />
-    </Routes>
-  )
-}
-
-function Root() {
-  return (
-    <BrowserRouter>
-      <DashgramProvider {...config}>
-        <App />
-      </DashgramProvider>
-    </BrowserRouter>
-  )
-}
-```
-
-### `useTrackMount(event, properties?)`
-
-Track component mount.
-
-```tsx
-import { useTrackMount } from "@dashgram/react"
-
-function HomePage() {
-  useTrackMount("home_page_viewed", {
-    source: "navigation"
-  })
-
-  return <div>Home Page</div>
-}
-```
-
-### `useTrackUnmount(event, properties?)`
-
-Track component unmount.
-
-```tsx
-import { useTrackUnmount } from "@dashgram/react"
-
-function VideoPlayer() {
-  useTrackUnmount("video_closed", {
-    duration: videoRef.current?.currentTime
-  })
-
-  return <video ref={videoRef} />
-}
-```
-
-### `useTrackClick(event, properties?)`
-
-Helper for tracking clicks.
-
-```tsx
-import { useTrackClick } from "@dashgram/react"
-
-function SubscribeButton() {
-  const handleClick = useTrackClick("subscribe_clicked", {
-    plan: "premium",
-    price: 9.99
-  })
-
-  return <button onClick={handleClick}>Subscribe</button>
-}
-```
-
-### `useTrackSubmit(event, properties?)`
-
-Helper for tracking form submissions.
-
-```tsx
-import { useTrackSubmit } from "@dashgram/react"
-
-function LoginForm() {
-  const handleSubmit = useTrackSubmit("login_form_submitted", {
-    method: "email"
-  })
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input type="email" />
-      <button type="submit">Login</button>
-    </form>
-  )
-}
-```
-
-## Telegram Mini App Example
-
-Complete example for a Telegram Mini App:
-
-```tsx
-import React from "react"
-import { DashgramProvider, useDashgram, usePageView, useTrackEvent } from "@dashgram/react"
-
-// Root component
-function Root() {
-  return (
-    <DashgramProvider
-      projectId={import.meta.env.VITE_DASHGRAM_PROJECT_ID}
-      trackLevel={2}
-      debug={import.meta.env.DEV}
-    >
-      <App />
-    </DashgramProvider>
-  )
-}
-
-// Main app
-function App() {
-  const location = window.location.pathname
-  usePageView(location)
-
-  return (
-    <div>
-      <HomePage />
-    </div>
-  )
-}
-
-// Home page component
-function HomePage() {
-  const trackEvent = useTrackEvent()
-
-  const handleButtonClick = () => {
-    trackEvent("cta_clicked", {
-      button: "get_started",
-      location: "hero"
-    })
-  }
-
-  return (
-    <div>
-      <h1>Welcome to My Mini App</h1>
-      <button onClick={handleButtonClick}>Get Started</button>
-    </div>
-  )
-}
-
-export default Root
-```
-
-## Complete Example with React Router
-
-```tsx
-import React from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import {
-  DashgramProvider,
-  useDashgram,
-  useScreenTracking,
-  usePageView,
-  useTrackEvent,
-  useAutoTrack
-} from "@dashgram/react"
-
-// App component
-function App() {
-  useScreenTracking() // Automatic screen tracking
-
-  return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/products" element={<ProductsPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-    </Routes>
-  )
-}
-
-// Home page
-function HomePage() {
-  const trackEvent = useTrackEvent()
-
-  usePageView("home") // Track page view
-
-  const handleSubscribe = () => {
-    trackEvent("subscribe_button_clicked", {
-      location: "home_hero"
-    })
-  }
-
-  return (
-    <div>
-      <h1>Welcome to Dashgram</h1>
-      <button onClick={handleSubscribe}>Subscribe</button>
-    </div>
-  )
-}
-
-// Products page
-function ProductsPage() {
-  useAutoTrack("products_page") // Auto track mount/unmount
-
-  return <div>Products</div>
-}
-
-// Profile page
-function ProfilePage() {
-  const { track } = useDashgram()
-
-  usePageView("profile")
-
-  return <div>Profile Page</div>
-}
-
-// Root
-function Root() {
-  return (
-    <BrowserRouter>
-      <DashgramProvider
-        projectId="prj_123"
-        trackLevel={2}
-        debug={process.env.NODE_ENV === "development"}
-      >
-        <App />
-      </DashgramProvider>
-    </BrowserRouter>
-  )
-}
-
-export default Root
+usePageView("home_page", { section: "landing" })
 ```
 
 ## Track Levels
 
-See [JavaScript SDK documentation](../Dashgram-Javascript/README.md#track-levels) for details about track levels.
+Choose how much data to collect. Higher levels capture more events but send more data.
 
-## TypeScript
+### Level 1 — Core
 
-The SDK is fully typed:
+**Minimal tracking** — Basic app lifecycle events only.
 
-```tsx
-import { useDashgram, EventProperties, DashgramConfig } from "@dashgram/react"
+| Event       | Description                       |
+| ----------- | --------------------------------- |
+| `app_open`  | Mini App opened or became visible |
+| `app_close` | Mini App closed or hidden         |
 
-const properties: EventProperties = {
-  product_id: "123",
-  price: 99.99
-}
-```
+**Use when:** You only need basic usage metrics.
 
-## Direct Access to Core SDK
+### Level 2 — Interactions
 
-If you need direct access to the JavaScript SDK:
+**Standard tracking** — Level 1 + user interactions.
 
-```tsx
-import { DashgramMini } from "@dashgram/react"
+| Event                 | Description                      |
+| --------------------- | -------------------------------- |
+| `screen_view`         | Page/route navigation            |
+| `button_click`        | Button clicks                    |
+| `link_click`          | Link clicks (external detection) |
+| `form_submit`         | Form submissions                 |
+| `input_focus`         | Input field focus                |
+| `input_change`        | Input field value changed        |
+| `copy`                | Text copied to clipboard         |
+| `cut`                 | Text cut to clipboard            |
+| `paste`               | Text pasted from clipboard       |
+| `text_select`         | Text selection                   |
+| `js_error`            | JavaScript errors                |
+| `unhandled_rejection` | Unhandled Promise rejections     |
 
-// Or
-import DashgramMini from "@dashgram/javascript"
+**Use when:** You want standard web analytics (recommended for most apps).
 
-// Usage
-await DashgramMini.flush()
-DashgramMini.setTrackLevel(3)
-DashgramMini.shutdown()
-```
+### Level 3 — Deep Analytics
 
-## Features
+**Comprehensive tracking** — Level 1 + 2 + performance metrics + all Telegram events.
 
-- ✅ **Thin wrapper** - No duplication, leverages `@dashgram/javascript` core SDK
-- ✅ **Automatic initialization** - SDK initializes on provider mount
-- ✅ **Automatic cleanup** - SDK shuts down on provider unmount
-- ✅ **React 18 Strict Mode** - Compatible with React 18's double-render behavior
-- ✅ **TypeScript** - Fully typed with comprehensive type definitions
-- ✅ **Hooks API** - Idiomatic React hooks for all common scenarios
-- ✅ **React Router integration** - Optional integration with `react-router-dom`
-- ✅ **SSR-safe** - Works in server-side rendering environments
-- ✅ **Telegram Mini Apps** - Optimized for Telegram Mini App environment
-- ✅ **Event batching** - Automatic event batching and flushing
-- ✅ **Telemetry enrichment** - Automatic telemetry data collection
+| Event                            | Description                    |
+| -------------------------------- | ------------------------------ |
+| `scroll_depth`                   | Scroll milestone reached       |
+| `element_visible`                | Tracked element became visible |
+| `rage_click`                     | Rapid repeated clicks          |
+| `long_task`                      | JS task >50ms                  |
+| `web_vital_lcp`                  | Largest Contentful Paint       |
+| `web_vital_fid`                  | First Input Delay              |
+| `web_vital_cls`                  | Cumulative Layout Shift        |
+| `network_status`                 | Online/offline status          |
+| `orientation_change`             | Device orientation change      |
+| `media_play/pause/ended`         | Video/audio events             |
+| `telegram_theme_changed`         | Telegram theme change          |
+| `telegram_viewport_changed`      | Viewport size change           |
+| `telegram_main_button_clicked`   | Main button pressed            |
+| `telegram_back_button_clicked`   | Back button pressed            |
+| `telegram_invoice_closed`        | Invoice closed                 |
+| ...and all other Telegram events |                                |
+
+**Use when:** You need detailed performance monitoring and all Telegram WebApp events.
+
+
+## Contributing
+
+Contributions are welcome! Please open issues or pull requests on the [GitHub repository](https://github.com/dashgram/dashgram-javascript).
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the LICENSE file for more information.
+
+## Contact
+
+For questions or support, reach out to us at [team@dashgram.io](mailto:team@dashgram.io) or visit our [website](https://dashgram.io).
