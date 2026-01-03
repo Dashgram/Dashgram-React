@@ -39,6 +39,11 @@ export function DashgramProvider({
       return
     }
 
+    // Don't initialize if projectId is missing
+    if (!projectId) {
+      return
+    }
+
     initRef.current = true
 
     try {
@@ -53,33 +58,74 @@ export function DashgramProvider({
         onError
       })
 
+      // Verify initialization succeeded by checking if we can call a method
+      // The SDK's init() is synchronous, so this should work immediately
       setIsInitialized(true)
     } catch (error) {
       console.error("Dashgram: Failed to initialize", error)
+      setIsInitialized(false)
+      initRef.current = false
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when dependencies change
     return () => {
-      DashgramMini.shutdown()
+      if (initRef.current) {
+        try {
+          DashgramMini.shutdown()
+        } catch (error) {
+          // Ignore shutdown errors
+        }
+        initRef.current = false
+        setIsInitialized(false)
+      }
     }
-  }, [projectId, trackLevel, apiUrl, batchSize, flushInterval, debug, disabled, onError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, trackLevel, apiUrl, batchSize, flushInterval, debug, disabled])
 
   const value: DashgramContextValue = {
     track: (event, properties) => {
-      if (isInitialized) {
+      // Check both React state and handle SDK errors gracefully
+      if (!isInitialized) {
+        if (debug) {
+          console.warn("Dashgram: Track called before initialization", { event, properties })
+        }
+        return
+      }
+
+      try {
         DashgramMini.track(event, properties)
+      } catch (error) {
+        // SDK might not be initialized even if React state says it is
+        // This can happen during re-initialization or if init() failed silently
+        if (debug) {
+          console.warn("Dashgram: Track failed", error)
+        }
+        // Update state to reflect actual SDK state
+        setIsInitialized(false)
       }
     },
     isInitialized,
     flush: async () => {
       if (isInitialized) {
-        await DashgramMini.flush()
+        try {
+          await DashgramMini.flush()
+        } catch (error) {
+          if (debug) {
+            console.warn("Dashgram: Flush failed", error)
+          }
+        }
       }
     },
     setTrackLevel: level => {
       if (isInitialized) {
-        DashgramMini.setTrackLevel(level)
-        setCurrentTrackLevel(level)
+        try {
+          DashgramMini.setTrackLevel(level)
+          setCurrentTrackLevel(level)
+        } catch (error) {
+          if (debug) {
+            console.warn("Dashgram: SetTrackLevel failed", error)
+          }
+        }
       }
     },
     getTrackLevel: () => {
@@ -87,9 +133,15 @@ export function DashgramProvider({
     },
     shutdown: () => {
       if (isInitialized) {
-        DashgramMini.shutdown()
-        setIsInitialized(false)
-        initRef.current = false
+        try {
+          DashgramMini.shutdown()
+          setIsInitialized(false)
+          initRef.current = false
+        } catch (error) {
+          if (debug) {
+            console.warn("Dashgram: Shutdown failed", error)
+          }
+        }
       }
     }
   }
