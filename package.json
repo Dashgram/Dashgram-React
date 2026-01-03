@@ -1,0 +1,42 @@
+{
+  "name": "@dashgram/react",
+  "version": "1.0.0",
+  "description": "React wrapper for Dashgram Analytics SDK",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"Tests require @testing-library/react and jest. See README for setup.\""
+  },
+  "keywords": [
+    "dashgram",
+    "analytics",
+    "react",
+    "telegram",
+    "mini-apps"
+  ],
+  "author": "Dashgram",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-router-dom": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@dashgram/javascript": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "react": "^18.2.0",
+    "typescript": "^5.3.3"
+  }
+}
