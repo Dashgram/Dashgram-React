@@ -23,6 +23,14 @@
   ],
   "author": "Dashgram",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashgram/dashgram-react.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dashgram/dashgram-react/issues"
+  },
+  "homepage": "https://dashgram.io",
   "peerDependencies": {
     "react": "^18.0.0"
   },
@@ -32,7 +40,7 @@
     }
   },
   "dependencies": {
-    "@dashgram/javascript": "^1.0.0"
+    "@dashgram/javascript": "*"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

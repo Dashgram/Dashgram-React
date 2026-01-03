@@ -21,7 +21,7 @@ export interface DashgramProviderProps extends DashgramConfig {
 export function DashgramProvider({
   children,
   projectId,
-  trackLevel = 1,
+  trackLevel = 2,
   apiUrl,
   batchSize,
   flushInterval,

@@ -57,63 +57,6 @@ export function Button() {
 }
 ```
 
-## API Reference
-
-### `<DashgramProvider>`
-
-Provider component that initializes the SDK.
-
-```tsx
-<DashgramProvider projectId="your-project-id" trackLevel={2} debug={false} disabled={false}>
-  <YourApp />
-</DashgramProvider>
-```
-
-**Props:**
-
-- `projectId` — **Required.** Your project ID from [Dashgram dashboard](https://app.dashgram.io)
-- `trackLevel` — Event collection level: `1`, `2`, or `3` (default: `2`)
-- `debug` — Enable debug logging (default: `false`)
-- `disabled` — Disable all tracking (default: `false`)
-
-### `useTrackEvent()`
-
-Hook that returns a function to track custom events with optional properties.
-
-```tsx
-const track = useTrackEvent()
-
-track("purchase_completed", {
-  product_id: "premium-plan",
-  price: 100,
-  currency: "TON"
-})
-```
-
-**Parameters:**
-
-- `event` — Event name (string)
-- `properties` — Optional event properties (object)
-
-### `useDashgram()`
-
-Hook to access the SDK instance.
-
-```tsx
-const { track, isInitialized, flush } = useDashgram()
-
-track("event_name")
-await flush()
-```
-
-### `usePageView(pageName, properties?)`
-
-Track page views for SPA routing.
-
-```tsx
-usePageView("home_page", { section: "landing" })
-```
-
 ## Track Levels
 
 Choose how much data to collect. Higher levels capture more events but send more data.
@@ -175,6 +118,62 @@ Choose how much data to collect. Higher levels capture more events but send more
 
 **Use when:** You need detailed performance monitoring and all Telegram WebApp events.
 
+## API Reference
+
+### `<DashgramProvider>`
+
+Provider component that initializes the SDK.
+
+```tsx
+<DashgramProvider projectId="your-project-id" trackLevel={2} debug={false} disabled={false}>
+  <YourApp />
+</DashgramProvider>
+```
+
+**Props:**
+
+- `projectId` — **Required.** Your project ID from [Dashgram dashboard](https://app.dashgram.io)
+- `trackLevel` — Event collection level: `1`, `2`, or `3` (default: `2`)
+- `debug` — Enable debug logging (default: `false`)
+- `disabled` — Disable all tracking (default: `false`)
+
+### `useTrackEvent()`
+
+Hook that returns a function to track custom events with optional properties.
+
+```tsx
+const track = useTrackEvent()
+
+track("purchase_completed", {
+  product_id: "premium-plan",
+  price: 100,
+  currency: "TON"
+})
+```
+
+**Parameters:**
+
+- `event` — Event name (string)
+- `properties` — Optional event properties (object)
+
+### `useDashgram()`
+
+Hook to access the SDK instance.
+
+```tsx
+const { track, isInitialized, flush } = useDashgram()
+
+track("event_name")
+await flush()
+```
+
+### `usePageView(pageName, properties?)`
+
+Track page views for SPA routing.
+
+```tsx
+usePageView("home_page", { section: "landing" })
+```
 
 ## Contributing
 
