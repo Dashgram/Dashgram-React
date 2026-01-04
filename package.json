@@ -1,6 +1,6 @@
 {
   "name": "@dashgram/react",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "React wrapper for Dashgram Analytics SDK",
   "type": "module",
   "main": "./dist/index.js",
